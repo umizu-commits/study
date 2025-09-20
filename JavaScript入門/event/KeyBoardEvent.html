@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    
+</head>
+<boady>
+<input id="textBox" type="text" />
+<div id="output"></div>
+
+<script>
+const textBox = document.querySelector("#textBox");
+const output = document.querySelector("#output");
+textBox.addEventListener("keydown", (event) => {
+  output.textContent = `"${event.key}" が押されました。`;
+});
+
+</script>
+</boady>
+</html>
