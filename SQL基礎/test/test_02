@@ -1,0 +1,55 @@
+#1．従業員の女性の数は？
+
+select count(*) from employees where gender = 'F';
+
+#2．従業員の中で、新規5名の名字と名前は？
+
+select first_name, last_name from employees order by hire_date desc limit 5;
+
+#3．従業員であるBob Johnsonの給料の一覧を出力せよ （salariesテーブルのsalaryのみを対象）
+
+select salary from salaries where employees_id = '2';
+#↑でも出力できるが、それはすでにBob JhonsonのIDが'2'であるとわかっている場合のみ可能
+
+SELECT salaries.salary
+FROM salaries
+JOIN employees ON salaries.employee_id = employees.id
+WHERE employees.first_name = 'Bob'
+AND employees.last_name = 'Johnson';
+#↑のほうが、より柔軟で安全であるため推奨される
+
+#4. 現在もEngineering部署に所属している従業員(employee)の数を出力するSELECT文を入力してください。
+
+SELECT count(*)
+FROM employees
+JOIN dept_emps ON employees.id = dept_emps.employee_id
+JOIN departments ON departments.id = dept_emps.department_id
+WHERE departments.dept_name = 'Engineering'
+AND dept_emps.to_date >= CURRENT_DATE;
+
+#5. 1995年生まれの従業員の数を出力するSELECT文を入力してください。
+
+select count(*)
+from employees
+where YEAR(birth_date) = 1995;
+
+#6. 1995年生まれの従業員の名前と姓を出力するSELECT文を入力してください。給料(salary)の合計が多いBest5の従業員のfirst_name・last_name、給与合計額(total_salary)を出力するSELECT文を入力してください。
+# ※給与合計額はAS句を使用してtotal_salaryとしてください。
+
+select e.first_name,e.last_name,SUM(s.salary) as total_salary
+from employees e
+join salaries s on e.id = s.employee_id
+group by e.id e.first_name,e.last_name
+order by total_salary desc
+limit 5;
+
+#7. 2020-01-28の時点で部署(department)が抱えている人数を多い順に並べ替えて部署名・従業員数合計を出力するSELECT文を入力してください。
+# ※従業員数合計人数はAS句を使用してemployee_countとしてください。
+SELECT departments.dept_name, COUNT(dept_emps.employee_id) AS employee_count
+FROM departments
+JOIN dept_emps ON departments.id = dept_emps.department_id
+WHERE dept_emps.from_date <= '2020-01-28'
+AND (dept_emps.to_date >= '2020-01-28' OR dept_emps.to_date = '9999-12-31')
+GROUP BY departments.dept_name
+ORDER BY employee_count DESC;
+
