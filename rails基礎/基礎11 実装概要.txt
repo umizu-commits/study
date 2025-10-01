@@ -1,0 +1,128 @@
+概要
+掲示板詳細機能の実装
+・掲示板一覧画面に表示されている掲示板のタイトルをクリックすると掲示板詳細画面へ遷移できること。
+・掲示板詳細画面には以下が表示されていること。
+＞掲示板のタイトル
+＞掲示板の本文
+＞掲示板を投稿したユーザーのフルネーム
+＞掲示板を投稿した日時
+
+コメント投稿機能、コメント一覧機能の実装
+・掲示板詳細画面に以下が表示されていること。
+＞コメントフォーム
+＞投稿されたコメントの一覧
+・Comments テーブルには「誰がどの掲示板にどんなコメントを投稿した」かが分かるように、以下のカラムが存在すること。
+＞user_id
+＞board_id
+＞body
+
+・コメント投稿成功時には「コメントを作成しました」というフラッシュメッセージが表示されること。
+・コメント投稿失敗時には「コメントを作成出来ませんでした」というフラッシュメッセージが表示されること。
+
+
+今回の課題で行わなければならないことを書き出す。
+調査
+・掲示板詳細機能実装方法
+・コメント投稿機能、コメント一覧機能
+＞Comments テーブルと各テーブル（Users, Boards）とのリレーション。
+＞Comments テーブルに必要なカラム。
+＞コメント投稿機能、コメント一覧表示機能に必要なものを洗い出す。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+・掲示板詳細機能
+＞ルーティング
+＞コントローラー＃アクション
+＞ビュー
+＞掲示板一覧画面からの導線
+・コメント投稿機能、コメント一覧機能
+＞モデル
+＞アソシエーション定義
+＞マイグレーションファイルをデータベースに適応
+＞ルーティング
+＞コントローラー＃アクション
+＞ビュー
+
+調べた内容も含めての実装イメージを書き出す。
+掲示板詳細機能
+・ルーティング設定
+＞resources :boards にshowアクションを追加する
+config/routes.rbにresources :boards
+・BoardsControllerのshowアクション作成
+def show
+  @board = Board.find(params[:id])
+  @comments = @board.comments.includes(:user) # コメント一覧用
+  @comment = Comment.new # コメントフォーム用
+end
+・ビュー作成 (app/views/boards/show.html.erb)
+<h1><%= @board.title %></h1>
+<p><%= @board.body %></p>
+<p>投稿者: <%= @board.user.full_name %></p>
+<p>投稿日: <%= l(@board.created_at, format: :long) %></p>
+
+コメント機能
+・モデルとテーブル作成
+railsコンソールにて、
+rails g model Comment user:references board:references body:text
+rails db:migrate
+モデル関連付け
+＞app/models/comment.rbを編集
+class Comment < ApplicationRecord
+  belongs_to :user
+  belongs_to :board
+  validates :body, presence: true
+end
+＞app/models/user.rbを編集
+has_many :comments
+＞app/models/board.rbを編集
+has_many :comments, dependent: :destroy
+・CommentsController 作成
+railsコンソールにて、
+rails g controller Comments create
+app/controllers/comments_controller.rbを編集
+class CommentsController < ApplicationController
+  def create
+    @board = Board.find(params[:board_id])
+    @comment = @board.comments.build(comment_params)
+    @comment.user = current_user
+
+    if @comment.save
+      redirect_to board_path(@board), notice: "コメントを作成しました"
+    else
+      redirect_to board_path(@board), alert: "コメントを作成出来ませんでした"
+    end
+  end
+
+  private
+
+  def comment_params
+    params.require(:comment).permit(:body)
+  end
+end
+・ルーティング設定
+boards にネストして comments#create を使えるようにする。
+config/routes.rbを編集
+resources :boards do
+  resources :comments, only: :create
+end
+・ビューにコメントフォームと一覧を追加
+app/views/boards/show.html.erbを編集
+<h2>コメント一覧</h2>
+<ul>
+  <% @comments.each do |comment| %>
+    <li>
+      <%= comment.user.full_name %>: <%= comment.body %>
+      （<%= l(comment.created_at, format: :short) %>）
+    </li>
+  <% end %>
+</ul>
+
+<h3>コメントを投稿する</h3>
+<%= form_with(model: [@board, @comment], local: true) do |form| %>
+  <div>
+    <%= form.text_area :body %>
+  </div>
+  <div>
+    <%= form.submit "投稿" %>
+  </div>
+<% end %>
+

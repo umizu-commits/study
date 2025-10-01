@@ -1,0 +1,87 @@
+概要
+画像付きの投稿が可能な掲示板を作成できること。
+掲示板に画像が無い場合は 300 x 200 画像（board_placeholder.png）が表示されること。
+画像のアップロードには gem 'carrierwave', '2.2.2' を使用すること。
+掲示板の画像情報はBoardsテーブルのboard_imageカラム（string型）に保存されること。
+アップロードできるファイルは jpg, jpeg, png, gif のみ。
+
+今回の課題で行わなければならないことを書き出す。
+・gem 'carrierwave'は、どんなgemなのか。
+・掲示板に画像を投稿するためには何が必要か。
+・Boardsテーブルに画像情報を保存するカラムは必要か否か。
+・掲示板に画像が無い場合は、300 x 200 画像（board_placeholder.png）を表示するにはどうしたらいいか。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+・gem 'carrierwave', '2.2.2'を導入する。
+・Boardsテーブルにboard_imageカラム（string型）を追加・データベースに反映させる。
+・アップロードできるファイルを jpg, jpeg, png, gif のみにする。
+・board_imageカラムに値が無い場合は、300 x 200 画像（board_placeholder.png）を表示するように設定する。
+・掲示板作成画面に画像ファイルをアップロードするボタンを設置する。
+・掲示板作成成功時にboard_imageカラムに値が保存されるのを確認する。
+・掲示板一覧画面でboard_imageカラムに値があるか無いかで表示するものを出し分ける。
+・概要で求められているものを満たせているか確認する。
+
+調べた内容も含めての実装イメージを書き出す。
+■gem 'carrierwave', '2.2.2'を導入する。
+-gem 'carrierwave', '2.2.2'をGemファイルに追加
+-bundle install
+■アップローダーを作成
+-app/uploaders/board_image_uploader.rb を作成 (rails generate uploader BoardImage)
+■Boards テーブルに board_image カラムを追加
+-マイグレーションを作成して反映 : rails generate migration add_board_image_to_boards board_image:string
+- rails db:migrate
+■モデルにアップローダーをマウント app/models/board.rb を編集：
+-class Board < ApplicationRecord
+  mount_uploader :board_image, BoardImageUploader
+ end
+■アップロードできるファイル形式を制限 app/uploaders/board_image_uploader.rb を編集：
+-class BoardImageUploader < CarrierWave::Uploader::Base
+  # 保存先（開発環境ならpublic/uploads）
+  storage :file
+
+  # 許可する拡張子
+  def extension_allowlist
+    %w[jpg jpeg png gif]
+  end
+ end
+■プレースホルダー画像を設定 app/uploaders/board_image_uploader.rb に追加：
+-class BoardImageUploader < CarrierWave::Uploader::Base
+  storage :file
+
+  def extension_allowlist
+    %w[jpg jpeg png gif]
+  end
+
+  # デフォルト画像を設定
+  def default_url(*args)
+    "board_placeholder.png"
+  end
+ end
+■掲示板作成画面にアップロードボタンを設置 app/views/boards/_form.html.erb を編集：
+-<%= form_with(model: board, local: true) do |form| %>
+  <!-- 他のフォーム項目 -->
+
+  <div class="form-group">
+    <%= form.label :board_image %>
+    <%= form.file_field :board_image, accept: "image/*" %>
+  </div>
+
+  <%= form.submit %>
+ <% end %>
+■掲示板作成時に保存されることを確認 コントローラのStrongParametersを修正(app/controllers/boards_controller.rb)：
+-def board_params
+  params.require(:board).permit(:title, :content, :board_image)
+ end
+■掲示板一覧画面で表示を切り替え app/views/boards/index.html.erb：
+-<% @boards.each do |board| %>
+  <div class="board">
+    <% if board.board_image.present? %>
+      <%= image_tag board.board_image.url, size: "300x200" %>
+    <% else %>
+      <%= image_tag "board_placeholder.png", size: "300x200" %>
+    <% end %>
+
+    <p><%= board.title %></p>
+    <p><%= board.content %></p>
+  </div>
+<% end %>

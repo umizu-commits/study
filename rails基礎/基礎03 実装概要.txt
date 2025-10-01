@@ -1,0 +1,111 @@
+イメージできるものとできないものとを分ける。
+
+イメージできるもの
+
+ヘッダー
+・ログインページへ
+・ログアウト機能
+
+ログイン ページ
+・ログイン機能
+（Emailアドレス、パスワード記入欄、ログインボタン）
+・登録ページへ
+・パスワード紛失ページへ
+
+ユーザー登録ページ
+・登録機能
+（firstname、lastname、Email、パスワード、パスワード確認、登録ボタン）
+
+
+イメージできないもの
+・gem 'sorcery'
+
+
+
+イメージできるものを使ってゴールまでの流れを書き出す
+・ユーザー登録を行い。登録したユーザー情報を元にログインできるように
+・ログイン状態からログアウト状態へ移行できるうように
+・一連の流れを図にする
+＞ユーザー登録
+↓
+＞ログイン
+↓
+＞ログアウト
+
+
+ゴールまでに必要になりそうなものを書き出す。
+
+ユーザー登録
+＞ユーザー情報を登録するためのテーブル、カラムの用意
+＞ユーザー登録処理に関するルーティングの用意
+	＞ユーザー登録画面を表示するルーティング
+	＞ユーザー登録処理を行うルーティング
+＞ルーティングに対応するコントローラー・アクションの用意
+＞ユーザー登録画面の用意
+
+ログイン
+＞ログイン処理に関するルーティングの用意
+	＞ログイン画面を表示するルーティング
+	＞ログイン処理を行うルーティング
+＞ルーティングに対応するコントローラー・アクションの用意
+＞ログイン画面の用意
+
+ログアウト
+＞ログアウト処理に関するルーティングの用意
+	＞ログアウト処理を行うルーティング
+＞ルーティングに対応するコントローラー・アクションの用意
+＞ログアウトを行うリンク・ボタンの用意
+
+
+イメージできなかったものについて調べる
+・公式ドキュメント
+・関連記事
+
+
+
+調べた内容も含めた実装イメージをまとめる。
+- ■sorcery導入
+  - install
+    - Gemfileに gem 'sorcery', '0.16.3' を記述する。
+    - docker compose run web bundle install コマンドを実行する。
+    - docker compose run web rails g sorcery:install コマンドを実行する。
+    - docker compose restart コマンドを実行する。（docker compose exec web bin/dev コマンドも別途実行する）
+- ■ユーザー登録
+  - マイグレーションファイル
+    - docker compose run web rails g sorcery:install コマンドで生成されたマイグレーションファイルを編集する。
+    - docker compose exec web rails db:migrate コマンドを実行する。
+    - docker compose exec web rails db:migrate:status コマンドで確認する。
+  - モデル
+    - app/models/user.rb を編集する
+  - ルーティング
+    - config/routes.rbにユーザー登録用のルーティングを記述する。
+      - users#new
+      - users#create
+  - コントローラー
+    - app/controllers/users_controller.rb を生成する。
+    - 生成した app/controllers/users_controller.rb に new, createアクションを定義する。
+  - ビュー
+    - app/views/users/配下に以下のファイルを生成・記述する。
+      - new.html.erb
+- ■ログイン
+  - ルーティング
+    - config/routes.rbにログイン用のルーティングを記述する。
+      - user_sessions#new
+      - user_sessions#create
+  - コントローラー
+    - app/controllers/application_controller.rb を編集する。
+    - app/controllers/static_pages_controller.rb を編集する。
+    - app/controllers/user_sessions_controller.rb を生成する。
+    - 生成した app/controllers/user_sessions_controller.rb に new, create, destroyアクションを定義する。
+  - ビュー
+    - app/views/user_sessions/配下に以下のファイルを生成・記述する。
+      - new.html.erb
+    - ログイン画面への導線（リンク）を用意する。
+      - ヘッダー
+- ■ログアウト
+  - ルーティング
+    - config/routes.rbにログアウト用のルーティングを記述する。
+      - user_sessions#destroy
+  - ビュー
+    - 未ログイン・ログイン状態が判別できるようにヘッダーの表示を出し分ける。
+    - ログアウト処理を行うリンクを用意する。

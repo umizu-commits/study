@@ -1,0 +1,35 @@
+今回の課題で行わなければならないことを書き出す。
+調査
+i18nについて調べる。
+Railsでの多言語化の仕方について調べる。
+rails-i18nについて調べる。
+Railsのi18nのデフォルト設定の方法について調べる。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+Railsのi18nのデフォルト設定を :ja にする。
+gem 'rails-i18n' を導入する。
+ja.ymlを用意する。
+該当ビューの日本語部分をi18n対応する。
+
+
+調べた内容も含めた実装イメージをまとめる。
+
+- ■Railsのi18nのデフォルト設定を :ja にする
+  - config/application.rb に設定を記述する。
+- ■gem 'rails-i18n' を導入する
+  - install
+    - Gemfile に gem 'rails-i18n', '~> 7.0.0' を記述する。
+    - docker compose run web bundle install コマンドを実行する。
+    - docker compose restart コマンドを実行する。（docker compose exec web bin/dev コマンドも別途実行する）
+- ■ja.ymlを用意する
+  - config/locales/activerecord/ja.ymlを用意する。
+    - config/locales/activerecord/ja.ymlを生成する。
+    - config/locales/activerecord/ja.ymlを記述する。
+  - config/locales/views/ja.ymlを用意する。
+    - config/locales/views/ja.ymlを生成する。
+    - config/locales/views/ja.ymlを記述する。
+- ■該当ビューの日本語部分をi18n対応する
+  - app/views/shared/_before_login_header.html.erb
+  - app/views/shared/_header.html.erb
+  - app/views/user_sessions/new.html.erb
+  - app/views/users/new.html.erb
