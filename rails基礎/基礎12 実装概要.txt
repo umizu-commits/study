@@ -1,0 +1,45 @@
+概要
+HTMLのheadタグ内のtitleタグは「RUNTEQ BOARD APP」となっており、どのページを開いても変わらない状態になっています。
+本課題ではその部分がページ毎に動的に出力されるように実装してください。
+
+以下、画面とその画面を表示した際に表示するタイトルになります。
+トップページ・・・・・・RUNTEQ BOARD APP
+ログインページ・・・・・ログイン | RUNTEQ BOARD APP
+ユーザー登録ページ・・・ユーザー登録 | RUNTEQ BOARD APP
+掲示板作成ページ・・・・掲示板作成 | RUNTEQ BOARD APP
+掲示板一覧ページ・・・・掲示板一覧 | RUNTEQ BOARD APP
+掲示板詳細ページ・・・・個別の掲示板のタイトル名 | RUNTEQ BOARD APP
+
+今回の課題で行わなければならないことを書き出す。
+・headタグ内のtitleタグとは何か。
+・動的にタイトルを出力するにはどうしたらいいか。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+・headタグ内のtitleタグについて、Rails ではレイアウトファイル (layouts/application.html.erb 等) 内で <title> を定義しておき、共通部分として使う。
+・各ビューでタイトルを動的に変えたい場合は、content_for などを使って <title> の内容を上書きする手法が実務でよく使われる。
+
+調べた内容も含めての実装イメージを書き出す。
+・config/locales/views/ja.yml を整える
+
+・helper にメソッドを定義する
+app/helpers/application_helper.rb に「ベースタイトル」と「動的タイトル」を組み立てるメソッドを追加
+module ApplicationHelper
+  def full_title(page_title = '')
+    base_title = 'RUNTEQ BOARD APP'
+    title.present? ? "#{title} | #{base_title}" : base_title
+  end
+end
+
+・ベースタイトルをアプリケーション全体に適応する
+app/views/layouts/application.html.erbを以下のように編集
+  <head>
+    <title><%= page_title(yield(:title)) %></title>
+
+・ログインページのタイトルを動的に出力する
+app/views/user_sessions/new.html.erbを以下のように編集
+先頭に
+<% content_for(:title, t('.title')) %>
+
+・掲示板詳細ページのタイトルを動的に出力する
+先頭に
+<% content_for(:title, @board.title) %>

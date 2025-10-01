@@ -1,0 +1,57 @@
+概要
+データベースのBoardsテーブルにレコードが無い場合は、「掲示板がありません」とページに表示すること。
+データベースのBoardsテーブルのレコード一覧を掲示板一覧として表示すること。
+表示するものは以下のとおり。
+＞掲示板のタイトル（title）
+＞掲示板の本文（body）
+＞掲示板を投稿したユーザーのフルネーム
+＞掲示板を投稿した日時（created_at）
+上記に加えて以下の条件を満たしていること。
+・UsersテーブルとBoardsテーブルのリレーションは「1対多」にすること。
+・Boardの登録には誰が投稿したかが分かるように、外部キーにUser情報を含めること。
+・Boardに対して以下のバリデーションが機能すること。
+＞titleカラムは255文字以下であること。
+＞bodyカラムは65535文字以下であること。
+・未ログイン状態で掲示板一覧画面にアクセスすると、ログインページにリダイレクトされること。
+
+今回の課題で行わなければならないことを書き出す。
+調査
+＞データベースにカラムを持たせて新しくテーブルを作る方法。
+＞リレーションとは何か。
+＞バリデーションとは何か。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+＞モデルとマイグレーションを作成
+＞リレーションとはデータベースのテーブル同士のつながり（関係性）を表す仕組みです。
+テーブル同士の関係を定義する（User と Board の「1対多」など）
+＞アソシエーションとは、railsの用語、リレーションが概念でアソシエーションは実装
+＞バリデーションとはデータをデータベースに保存する前に正しい値かどうかチェックする仕組みです。
+＞掲示板一覧画面へのルーティングを設定する。
+＞設定したルーティングに対応するコントローラーとアクションを用意する。
+＞用意したコントローラーとアクションに対応するビューを用意する。
+
+調べた内容も含めての実装イメージを書き出す。
+- ■Boardモデル・Boardsテーブルを生成する
+  - docker compose exec web rails g model Board コマンドを実行する
+  - app/models/board.rbを編集する
+  - マイグレーションファイルの編集する
+  - データベースにマイグレーションファイルを適用する
+- ■掲示版一覧画面へのルーティング設定する
+  - config/routes.rbに resources :boards, only: %i[index] を記載する
+- ■設定したルーティングに対応するコントローラーとアクションを用意する
+  - docker compose exec web rails g controller boards コマンドを実行する
+  - app/controllers/boards_controller.rbにindexアクションを定義する
+- ■用意したコントローラーとアクションに対応するビューを用意する
+  - app/views/boards/index.html.erbを生成・編集する
+  - app/assets/images/配下にboard_placeholder.pngを配置する
+  - app/views/boards/_board.html.erbを生成・編集する
+- ■見た目・導線を整える
+  - app/views/boards/index.html.erbを編集する
+  - config/application.rbを編集する
+  - config/locales/views/ja.ymlを編集する
+  - app/controllers/application_controller.rbを編集する
+  - app/controllers/user_sessions_controller.rbを編集する
+- ■Boardレコードを用意する
+  - RailsコンソールでBoardレコードを生成する
+  - db/seeds.rbを用いてレコードを生成する
+

@@ -1,0 +1,54 @@
+概要
+ログイン後のヘッダーにログイン中のユーザーのlast_nameとfirst_nameが並んで表示されること。
+表示は「last_name first_name」としてください。例：「らんてっく たろう」
+last_nameとfirst_nameの間には半角スペースが1つ入るようにしてください。
+上記を実装する際にgem 'draper', '4.0.2'を使用してください。
+Userモデルのdecoratorを作成して、そちらに「last_name first_name」を表示するメソッドを定義してください。
+「last_name first_name」を表示するメソッド名は full_name としてください。
+
+
+今回の課題で行わなければならないことを書き出す。
+
+調査
+・draperについて調べる
+＞プレゼンテーションロジックを整理し、テスト可能にするためのデコレータパターンを実装するためのgemです。
+＞これにより、ビューでの表示に関するロジックをモデルから切り離し、よりクリーンで保守性の高いコードを書くことができます。
+＞gem 'draper'でインストール
+＞モデルに対応するデコレータをapp/decoratorsディレクトリ内に作成します。
+＞コントローラでモデルを取得した後、decorateメソッドを使用してデコレータを適用します。
+＞ビューでは、デコレータを通じてモデルのデータを表示します。
+
+・decoratorについて調べる
+＞デコレータは、モデルのデータをラップして、表示用のロジックを追加するオブジェクトです。
+＞モデルを直接変更せずに、表示ロジックを追加できる
+＞ビューでのコードをシンプルに保つ
+＞テスト可能な形でプレゼンテーションロジックを分離できる
+＞Draperを使うと、モデルのインスタンスをデコレータでラップするだけで、そのモデルに独自の「表示用メソッド」を追加できます。
+＞Draperでは rails generate decorator モデル名 コマンドで自動生成できます。
+＞生成されるファイルは app/decorators/article_decorator.rb です。
+＞delegate_all を使うことで、モデルのメソッド（例: title, published?）をそのまま使えます。
+＞デコレータ独自のメソッドを定義することで、ビュー向けのロジックを追加できます。
+＞コントローラでの利用 モデルを取得したあとに .decorate を呼ぶことでデコレータを適用します。
+＞複数オブジェクトの場合は .decorate_collection を使えます。
+＞ビューでは、デコレータで定義したメソッドをそのまま使えます。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+・draperを導入する
+・Userモデルのdecoratorを作成
+・作成したdecoratorにfull_nameメソッドを定義する。
+・定義したメソッドを使って画面に「last_name first_name」を表示する。
+
+調べた内容も含めての実装イメージを書き出す。
+- ■draperを導入する
+  - install
+    - Gemfileに gem 'draper', '4.0.2' を記述する。
+    - docker compose run web bundle install コマンドを実行する。
+    - docker compose restart コマンドを実行する。（docker compose exec web bin/dev コマンドも別途実行する）
+- ■Userモデルのdecoratorを作成する
+  - docker compose exec web rails g decorator User コマンドを実行する。
+- ■生成されたUserDecoratorにfull_nameメソッドを定義する
+  - app/decorators/user_decorator.rbにfull_nameメソッドを定義する。
+- ■ログイン後のヘッダーにfull_nameを表示する
+  - app/views/shared/_header.html.erbを編集する。
+
+  

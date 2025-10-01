@@ -1,5 +1,7 @@
+# docker-compose.yml
 services:
   app:
     build: .
     volumes:
       - .:/app
+    tty: true
