@@ -1,0 +1,104 @@
+概要
+・掲示板のブックマーク登録・ブックマーク解除を非同期でできるように実装してください。
+
+調査
+・ブックマーク機能を非同期化させる方法
+＞Rails 7 には Hotwire (Turbo) という仕組みが入っているため、これを使うことでJavaScriptを自分で書くことなく非同期ボタンを作成できる。
+・非同期化とは
+＞通常時、ブックマーク登録・削除を行うと、ページ全体がリロードされて反映されるが、非同期化であれば、画面の一部（☆や★だけ）が書き換わる
+・HTMLの一部を非同期で置き換える方法
+＞必要な部分の HTML だけが書き換わるため、ページ全体はリロードされないことによって、ユーザー体験がスムーズになるメリットがある。
+
+今回の課題で行わなければならないことを書き出す。
+・ボタン部分を部分テンプレートにする。
+・一覧ページで呼び出す
+・コントローラで非同期用の返事をする
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+・ボタン部分を部分テンプレートにすることにより、★と☆の切り替えを実現する。
+・呼び出し元のビューで使うことにより、一覧ページで呼び出す
+・コントローラでTurbo Stream を返す
+
+調べた内容も含めての実装イメージを紙に書き出す。
+■部分テンプレート（ビュー）を作る
+・app/views/bookmarks/_toggle.html.erb を作ります。★/☆ の切替表示と、それぞれのリンク（post / delete）をここで出す。
+
+<!-- app/views/bookmarks/_toggle.html.erb -->
+<%# locals: board %>
+<%# 親ビューで current_user が利用できる想定 %>
+
+<% if current_user.bookmarks.exists?(board_id: board.id) %>
+  <% bookmark = current_user.bookmarks.find_by(board_id: board.id) %>
+  <%= link_to "★",
+              bookmark_path(bookmark),
+              data: { turbo_method: :delete, turbo_confirm: "ブックマークを解除しますか？" },
+              title: "ブックマーク解除" %>
+<% else %>
+  <%= link_to "☆",
+              bookmarks_path(board_id: board.id),
+              data: { turbo_method: :post },
+              title: "ブックマークする" %>
+<% end %>
+
+■親ビューに部分テンプレートをレンダリング（一覧画面例）
+・app/views/boards/index.html.erb（一覧）で各掲示板に対して以下を置きます。
+
+<% @boards.each do |board| %>
+  <div class="board" id="board_<%= board.id %>">
+    <h3><%= link_to board.title, board_path(board) %></h3>
+
+    <!-- ここが差し替えるターゲット -->
+    <div id="bookmark_button_<%= board.id %>">
+      <%= render "bookmarks/toggle", board: board %>
+    </div>
+  </div>
+<% end %>
+
+■コントローラを用意する（Turbo に対応）
+・app/controllers/bookmarks_controller.rb（既存の create/destroy を書き換えるか追加してください）
+
+class BookmarksController < ApplicationController
+  before_action :set_bookmark, only: [:destroy]
+
+  def create
+    @board = Board.find(params[:board_id])
+    @bookmark = current_user.bookmarks.create(board: @board)
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "bookmark_button_#{@board.id}",
+          partial: "bookmarks/toggle",
+          locals: { board: @board }
+        )
+      end
+      format.html { redirect_to boards_path, notice: "ブックマークしました" }
+    end
+  end
+
+  def destroy
+    @bookmark = current_user.bookmarks.find(params[:id])
+    @board = @bookmark.board
+    @bookmark.destroy
+
+    respond_to do |format|
+      format.turbo_stream do
+        render turbo_stream: turbo_stream.replace(
+          "bookmark_button_#{@board.id}",
+          partial: "bookmarks/toggle",
+          locals: { board: @board }
+        )
+      end
+      # Turbo が無効な場合のフォールバック
+      format.html { redirect_to boards_path, notice: "ブックマークを解除しました", status: :see_other }
+    end
+  end
+
+  private
+
+  def set_bookmark
+    @bookmark = Bookmark.find(params[:id])
+  end
+end
+
+
