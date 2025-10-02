@@ -1,0 +1,125 @@
+概要
+掲示板一覧画面で他者が投稿した掲示板をブックマーク登録や解除ができる機能を実装してください。ブックマークしている状態を★、ブックマークされていない状態を☆で表現してください。
+また、ブックマークした掲示板の一覧を、ヘッダーの「ブックマーク一覧」にアクセスした際に確認できるように実装してください。
+
+調査
+掲示板をブックマーク登録、解除ができる機能の実装方法
+ブックマーク一覧ページの実装方法
+
+今回の課題で行わなければならないことを書き出す。
+・ブックマークとは何かを調べる。
+・ブックマークを実現するためのテーブル・リレーションを考える。
+・Bookmarkモデルの生成。
+・Bookmarksテーブルを生成するためのマイグレーションファイルの用意。
+・ルーティングの設定。
+・必要なビューファイルの用意。
+・コントローラー#アクションの用意。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+・モデル: User と Board の間に Bookmark を作り、has_many :through で多対多を実現
+・ルーティング: boards にネストした bookmark resource
+・コントローラ: create で登録、destroy で解除
+・ビュー: link_to + 条件分岐で「登録／解除」を切り替え
+・フラッシュ: 成功時に「ブックマークしました／解除しました」を表示
+
+調べた内容も含めての実装イメージを紙に書き出す。
+■モデル関連付け
+-has_many :through を使うと、中間テーブルを通じて多対多の関係を定義できます。
+
+class User < ApplicationRecord
+  has_many :bookmarks, dependent: :destroy
+  has_many :bookmarked_boards, through: :bookmarks, source: :board
+end
+
+class Board < ApplicationRecord
+  has_many :bookmarks, dependent: :destroy
+  has_many :bookmark_users, through: :bookmarks, source: :user
+end
+
+class Bookmark < ApplicationRecord
+  belongs_to :user
+  belongs_to :board
+end
+
+■ルーティング
+-掲示板ごとの登録・解除に加えて、ユーザーがブックマークした一覧ページを作ります。
+config/routes.rb
+
+resources :boards do
+  resource :bookmark, only: [:create, :destroy]
+end
+
+resources :bookmarks, only: [:index]  # 一覧表示用
+
+■コントローラ
+-登録・解除
+
+class BookmarksController < ApplicationController
+  before_action :set_board, only: [:create, :destroy]
+
+  def index
+    # ログインユーザーがブックマークした掲示板一覧
+    @boards = current_user.bookmarked_boards
+  end
+
+  def create
+    current_user.bookmarks.create(board: @board)
+    redirect_to boards_path, notice: "ブックマークしました"
+  end
+
+  def destroy
+    current_user.bookmarks.find_by(board: @board).destroy
+    redirect_to boards_path, notice: "ブックマークを解除しました"
+  end
+
+  private
+
+  def set_board
+    @board = Board.find(params[:board_id])
+  end
+end
+
+■ビュー修正（★/☆ 表示）
+-一覧画面・詳細画面どちらでも「ブックマーク状態」を ★/☆ で表示します。
+
+<!-- app/views/boards/index.html.erb -->
+<% @boards.each do |board| %>
+  <h2><%= board.title %></h2>
+
+  <% if current_user.bookmarked_boards.include?(board) %>
+    <%= link_to "★",
+                board_bookmark_path(board),
+                method: :delete,
+                data: { confirm: "解除しますか？" },
+                class: "bookmark-icon" %>
+  <% else %>
+    <%= link_to "☆",
+                board_bookmark_path(board),
+                method: :post,
+                class: "bookmark-icon" %>
+  <% end %>
+<% end %>
+
+■ブックマーク一覧ページ
+-BookmarksController#index で取得した掲示板を表示。
+
+<!-- app/views/bookmarks/index.html.erb -->
+<h1>ブックマーク一覧</h1>
+
+<% @boards.each do |board| %>
+  <div>
+    <h2><%= link_to board.title, board_path(board) %></h2>
+  </div>
+<% end %>
+
+■ヘッダーにリンク追加
+-全画面共通レイアウトにリンクを配置。
+
+<!-- app/views/layouts/application.html.erb -->
+<nav>
+  <%= link_to "掲示板一覧", boards_path %> |
+  <%= link_to "ブックマーク一覧", bookmarks_path %>
+</nav>
+
+<p class="notice"><%= notice %></p>
+<p class="alert"><%= alert %></p>
