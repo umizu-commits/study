@@ -1,0 +1,35 @@
+概要
+gem 'kaminari', '1.2.2' と gem 'bootstrap5-kaminari-views' を使用して、
+掲示板一覧画面、ブックマーク一覧画面に掲示板が 21 個以上表示される場合、ページネーションが表示され、各ページに遷移できるように実装してください。
+
+調査
+・gem 'kaminari', '1.2.2' とは
+＞Kaminariは Rails 用のページネーションライブラリ
+＞1ページあたりに表示する件数の設定 (per)
+＞ページ番号を指定して取得 (page)
+＞ページリンクの自動生成 (paginate ヘルパー)
+・gem 'bootstrap5-kaminari-views'とは
+＞Kaminari のページネーションリンクを Bootstrap 5 に対応させるためのビューライブラリ
+＞Kaminari 単体だとデフォルトのリンクデザインがシンプル（素っ気ない）ですが、この gem を入れると Bootstrap のデザインに即したページネーション UI を使えるようになります。
+・ページネーションとは
+＞「大量のデータをページに分けて表示し、ユーザーがページごとに移動できる仕組み」 のこと
+
+今回の課題で行わなければならないことを書き出す。
+・gemファイルにKaminariと'bootstrap5-kaminari-views'を追加し、インストールする。
+・perを活用して、掲示板20につき、1ページが作られるようにする。
+・ページ間を遷移できるようにする。
+・bootstrap5-kaminari-viewsによってUIを整える。
+
+調査結果と概要から何を行う必要があるかを大まかにイメージする。
+■Kaminariの設定ファイルを作成
+-rails g kaminari:config
+config/initializers/kaminari_config.rb のようなファイルが生成され、そこに設定を記述。
+-掲示板の21位校をページネーションするために以下を追加
+config.default_per_page = 20
+■コントローラ&パラメータ
+-ページ番号は通常 params[:page] によって受け取る。
+例：@users = User.order(:name).page params[:page]
+-必要に応じてクエリパラメータ名をカスタマイズしたり、ページネーション URL のオプション（params: { … }）を渡すことも可能。
+-また、Rails ルーティングを工夫して「フレンドリーな URL（例： /resources/page/3）」形式にする手法も紹介されています。また、Rails ルーティングを工夫して「フレンドリーな URL（例： /resources/page/3）」形式にする手法も紹介されています。
+■ビューファイルに設定
+-<%= paginate @xxxx, theme: 'bootstrap-5' %>
