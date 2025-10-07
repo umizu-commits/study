@@ -67,3 +67,6 @@ end
 ・送信メールの設定 Action Mailerで実装
 ・パスワードリセット画面の実装
 ・ボタンの実装＆設定
+・boostap 5 によるページレイアウト
+・gem letter_opener による 開発環境でのメールの送受信の設定
+・gem config による環境ごとの設定
