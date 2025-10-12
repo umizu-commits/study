@@ -226,4 +226,7 @@ rails基礎
 ・rails g コマンドで生成されるファイル
 ・rails g コマンドで生成されるファイルを制御する設定方法
 ・rails g コマンドで生成されるファイルを制御する必要性
-・
+RSpec入門
+・system specとは何か
+・capybaraの使い方
+・処理の共通化
