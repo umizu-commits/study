@@ -1,0 +1,1055 @@
+問題1.
+部分テンプレートについて、正しい記載は次のうちどれか
+※ アンダースコアの有無に注意してください
+
+なので、
+
+☑部分テンプレートファイルであるshared/header.html.erbを呼び出すとき、以下のように書く。
+
+<%= render 'shared/header' %>
+
+部分テンプレートファイルであるshared/header.html.erbを呼び出すとき、以下のように書く。
+
+<%= render 'shared/_header' %>
+
+部分テンプレートファイルであるshared/_header.html.erbを呼び出すとき、以下のように書く。
+
+<%= render 'shared/header' %>
+
+☑部分テンプレートファイルであるshared/_header.html.erbを呼び出すとき、以下のように書く。
+
+<%= render 'shared/_header' %>
+
+
+！一致している1と4が該当
+
+→3が正解
+部分テンプレートファイルは、ファイル名の先頭に_が必要
+renderで部分テンプレートファイルを指定するとき、先頭の_は不要
+
+
+問題2.
+モデルについて正しい記述はどれか
+
+☑ActiveRecordクラスを継承している
+
+
+複数形で定義する
+
+
+クラス名はケバブケースで書く
+
+
+対応するテーブルは単数形で定義する
+
+
+！モデルは単数形のため2は異なる
+クラス名はスネークケースで書くため3は異なる
+対応するテーブルは複数形で定義するため4は異なる
+
+→1が正解
+
+
+
+問題3.
+マイグレーションファイルについて正しい記述はどれか
+
+
+☑マイグレーションファイルを1から全て再実行するためにdb:migrate:resetをした
+
+
+☑マイグレーションファイルを作りdb:migrateを行なった。その後マイグレーションファイルに誤りを見つけたので一部修正し再度db:migrateを行なった。
+
+
+マイグレーションファイルを1から全て再実行するためにdb:migrateを実行した。
+
+
+マイグレーションファイルを1から全て再実行するためにdb:resetを実行した
+
+
+！マイグレーションを再実行するにはdb:migrate:reset、マイグレーションファイルを作った場合や変更があった場合は
+db:migrate
+
+→1が正解
+2はマイグレーションファイルに誤りがあった場合、まずrollbackしなければならない。
+そのまま修正して、再度db:migrateを行っても修正は反映されない。
+
+
+問題4.
+N+1問題が発生する状況として、正しい記載はどれか。
+
+
+☑@boards = Board.all
+@boards.each do |board|
+  puts board.user.full_name
+end
+
+@boards = Board.all.includes(:user)
+@boards.each do |board|
+  puts board.user.full_name
+end
+
+☑@boards = Board.all
+@boards.each do |board|
+  puts board.user_id
+end
+
+☑@boards = Board.all
+@boards.each do |board|
+  puts board.user.id
+end
+
+
+！2は.includes(:user)を使っているため、回避
+→1、3、4が正解
+
+
+問題5.
+
+以下のコードで、掲示板の作成に成功した際の挙動について正しいものはどれか。
+
+class BoardsController < ApplicationController
+  def index
+    @boards = Board.all.includes(:user).order(created_at: :desc)
+  end
+
+  def new
+    @board = Board.new
+  end
+
+  def create
+    @board = current_user.boards.build(board_params)
+    if @board.save
+      redirect_to boards_path, success: t('defaults.message.created', item: Board.model_name.human)
+    else
+      flash.now['danger'] = t('defaults.message.not_created', item: Board.model_name.human)
+      render :new
+    end
+  end
+
+
+
+ステータスコードが300番台でかつlocationヘッダーが/boardsのレスポンスが返る。
+その結果、ブラウザは再度GET /boards のリクエストを送る。
+
+
+redirect_toが使われているので、クライアントにレスポンスを返さずに再度indexアクションが実行される。
+
+
+ステータスコードが200番台のレスポンスが直接そのまま返される。
+
+
+☑ステータスコードが200番台でかつlocationヘッダーが/boardsのレスポンスが返る。
+
+
+！成功時は200番台、成功時はredirect_to boards_pathになっているので、4
+→1が正解
+掲示板の作成に成功した場合はif @board.saveの条件式がtrueになるため、redirect_to boards_pathが実行される。
+その結果、まずクライアントにはリダイレクトを意味する300番台のステータスコード且つ「ここにリダイレクトして」という意味合いのlocationヘッダーに/boardsが設定されたレスポンスが返される。
+ブラウザはそのレスポンスを見て「/boardsに対して再度リクエストを送らないといけないのね。はい、GET /boardsを送ります！ 」 のような挙動をする。
+その結果boards#indexが実行され、index.html.erbがrenderされステータス200が返る。
+
+
+問題6.
+
+以下の:shallowオプションについて、正しいcommentsのルーティングは以下のどれか
+
+resources :boards, shallow: true do
+  resources :comments, only: %i[create destroy update]
+end
+※ shallowの挙動が分からない場合は、調べても大丈夫です。
+
+
+comments POST   /boards/:id/comments(.:format)         comments#create
+comment  PATCH  /boards/:id/comments/:id(.:format)     comments#update
+         PUT    /boards/:id/comments/:id(.:format)     comments#update
+         DELETE /boards/:id/comments/:id(.:format)     comments#destroy
+
+board_comments POST   /boards/:board_id/comments(.:format)   comments#create
+comment        PATCH  /comments/:id(.:format)                comments#update
+               PUT    /comments/:id(.:format)                comments#update
+               DELETE /comments/:id(.:format)                comments#destroy
+
+☑boards_comments POST   /boards/comments(.:format)      boards/comments#create
+boards_comment  PATCH  /boards/comments/:id(.:format)  boards/comments#update
+                PUT    /boards/comments/:id(.:format)  boards/comments#update
+                DELETE /boards/comments/:id(.:format)  boards/comments#destroy
+
+
+comments POST   /boards/comments(.:format)       comments#create
+comment  PATCH  /boards/comments/:id(.:format)   comments#update
+         PUT    /boards/comments/:id(.:format)   comments#update
+         DELETE /boards/comments/:id(.:format)   comments#destroy
+
+
+
+！shallowは浅いという意味
+3以外はboards/というルーティングがない
+
+→2が正解
+:shallowオプションは、例えば/boards/:board_id/comments/:idのように、idが2つパスに含まれているものの、
+片方のidだけで十分な場合に使用すると良い。
+選択肢1はmemberを使用した場合のルーティング
+選択肢3はnamespaceを使用した場合のルーティング
+選択肢3はcollectionを使用した場合のルーティング
+
+
+問題7.
+
+下記のうち正しい記述はどれか。
+
+
+以下のxxxxxの箇所には、updateメソッドよりupdate!メソッドの方が適している。
+
+def update
+  @board = current_user.boards.find(params[:id])
+  if @board.xxxxx(board_params)
+    redirect_to @board, success: t('defaults.message.updated', item: Board.model_name.human)
+  else
+    flash.now['danger'] = t('defaults.message.not_updated', item: Board.model_name.human)
+    render :edit
+  end
+end
+
+
+
+下記のupdate!メソッドで更新に失敗したとき、else節内の処理が実行される。
+
+def update
+  @board = current_user.boards.find(params[:id])
+  if @board.update!(board_params)
+    redirect_to @board, success: t('defaults.message.updated', item: Board.model_name.human)
+  else
+    flash.now['danger'] = t('defaults.message.not_updated', item: Board.model_name.human)
+    render :edit
+  end
+end
+
+
+
+以下のxxxxxにはdestroyメソッドよりdestroy!メソッドのほうが適している。
+
+def destroy
+  @board = current_user.boards.find(params[:id])
+  @board.xxxxx
+  redirect_to boards_path, success: t('defaults.message.deleted', item: Board.model_name.human)
+end
+
+
+
+☑下記のdestroy!メソッドで削除に失敗したとき、redirect_toは実行されない。
+
+def destroy
+  @board = current_user.boards.find(params[:id])
+  @board.destroy!
+  redirect_to boards_path, success: t('defaults.message.deleted', item: Board.model_name.human)
+end
+
+
+！1は条件分岐があるため！は適切でない
+2も条件分岐が行われない
+3はdestroy!に失敗した際、リダイレクトされないため適切でない
+
+→3と4が正解
+3は選択肢1,2と違い、削除処理が失敗したときの処理は用意していない。
+削除処理に失敗することはアプリとして想定外であるため、destroy!を使用すると良い。
+
+
+
+問題8.
+
+以下の要件でモデルを作成するとき、以下の選択肢で正しいのはどれか
+
+ユーザー(User)は0つ以上の記事(Article)を持っている
+ユーザーは0つ以上の記事をお気に入り状態にでき、中間テーブルはLikeを使用する
+ユーザーが削除されると、紐付いている中間テーブルのレコードを削除する
+記事が削除されると、紐付いている中間テーブルのレコードを削除する
+
+
+class User < ApplicationRecord
+  has_many :articles, dependent: :destroy
+  has_many :likes, dependent: :destroy
+  has_many :articles, through: :likes
+end
+class Like < ApplicationRecord
+  belongs_to :user
+  belongs_to :article
+end
+class Article < ApplicationRecord
+  belongs_to :user
+  has_many :likes, dependent: :destroy
+  has_many :users, through: :likes
+end
+
+
+
+class User < ApplicationRecord
+  has_many :articles, dependent: :destroy
+  has_many :likes, dependent: :destroy
+  has_many :like_articles, through: :likes
+end
+class Like < ApplicationRecord
+  belongs_to :user
+  belongs_to :article
+end
+class Article < ApplicationRecord
+  belongs_to :user
+  has_many :likes, dependent: :destroy
+  has_many :like_users, through: :likes
+end
+
+
+
+☑class User < ApplicationRecord
+  has_many :articles, dependent: :destroy
+  has_many :likes, dependent: :destroy
+  has_many :like_articles, through: :likes, source: :article
+end
+class Like < ApplicationRecord
+  belongs_to :user
+  belongs_to :article
+end
+class Article < ApplicationRecord
+  belongs_to :user
+  has_many :likes, dependent: :destroy
+  has_many :like_users, through: :likes, source: :user
+end
+
+
+
+class User < ApplicationRecord
+  has_many :articles, dependent: :destroy
+  has_many :likes, dependent: :destroy
+  has_many :like_articles, through: :likes, source: :article
+end
+class Like < ApplicationRecord
+  belongs_to :user
+  has_many :article
+end
+class Article < ApplicationRecord
+  belongs_to :user
+  belongs_to :likes, dependent: :destroy
+  belongs_to :liked_user, through: :likes, source: :user
+end
+
+
+！has_manyが1対多、belongs_toが多対1であるため、この場合ユーザーは記事に対してhas_many、記事は反対にbelongs_toになる。ユーザーとお気に入りの関係はユーザーがhas_many、お気に入りがbelong_to。記事とお気に入りとの関係も同様。
+1はユーザーがお気に入りでない記事に対する紐づけが適切でない。2も同様。4はlikeのモデルが異なっている。
+
+→3が正解
+選択肢1はUserクラスにhas_many :articlesが2つあるため、誤りとなる。
+Userクラス# 正しい書き方
+has_many :like_articles, through: :likes, source: :article
+Articleクラス# 正しい書き方
+has_many :like_users, through: :likes, source: :user
+
+選択肢2はas_many :like_articlesと別名にする点は良かったのですが、別名にした場合には元のモデル名をsource:オプションで指定する必要があります。
+Userクラス# 正しい書き方
+has_many :like_articles, through: :likes, source: :article
+Articleクラス# 正しい書き方
+has_many :like_users, through: :likes, source: :user
+
+中間テーブルが絡むと色々複雑になりますが、他の選択肢に記載した以下の点を注意すると良い。
+
+has_many :xxxsが2つあることに違和感を持つ
+has_many先を別名にした場合、元のモデル名をsource:オプションで指定する必要がある
+中間テーブルは他2モデルに従属している
+
+
+
+問題9.
+
+下記コードについて、書き換え可能な選択肢はどれか
+(Board.find(params[:board_id])でBoardが見つからないことはないとする)
+
+# Controller
+board = Board.find(params[:board_id])
+current_user.bookmark(board)
+# Userのモデルクラス(一部抜粋)
+class User < ApplicationRecord
+  has_many :bookmarks, dependent: :destroy
+  has_many :bookmark_boards, through: :bookmarks, source: :board
+
+  def bookmark(board)
+    bookmark_boards << board
+  end
+end
+
+# Controller
+board = Board.find(params[:board_id])
+current_user.bookmark_boards.create!(board_id: board.id)
+
+☑# Controller
+board = Board.find(params[:board_id])
+Bookmark.create!(user: current_user, board: board)
+
+☑# Controller
+board = Board.find(params[:board_id])
+current_user.bookmarks.create!(board_id: board.id)
+
+☑# Controller
+board = Board.find(params[:board_id])
+board.bookmarks.create!(user_id: current_user.id)
+
+！1はBoardを新規作成してしまう。2はユーザーと掲示板を指定してブックマークに登録している。3はログインユーザーに指定の掲示板IDを登録している。4は逆に、掲示板に指定のユーザーidを登録している。
+
+→2、3、4が正解
+選択肢1はbookmarkではなくboardのインスタンスを新規で作成しようとしています。
+
+
+
+問題10.
+以下のコメント作成部分の書き換えとして正しいものはどれか
+
+@comment = current_user.comments.build(comment_params)
+@comment.save
+
+
+
+☑@comment = current_user.comments.create(comment_params)
+
+
+☑@comment = Comment.new(comment_params)
+@comment.update(user_id: current_user.id)
+
+
+
+@comment = current_user.comments.new(comment_params)
+@comment.save
+
+
+
+@comment = Comment.create(comment_params)
+@comment.user_id = current_user.id
+
+！元のコードはログイン中のユーザーのコメントに紐づく新しいオブジェクト（Comment)を作成し、saveでそれをDBに保存するというもの。1はそれを1行で表している。2、4はsaveがない。3はnewで作って、saveで保存できている。
+
+→1、3が正解
+updateメソッドはDBに登録されたオブジェクトに対して行います。
+選択肢2のように、Comment.newしただけであればDBに登録していないため、updateメソッドは実行できません。
+選択肢4の書き方だと、user_idはDBに登録できていません。
+
+
+問題11.
+
+以下の選択肢のうち、正しいのはどれか
+前提となるコードは以下のように実装されているとする。
+
+# Userのモデルファイル
+class User < ApplicationRecord
+  enum role: { general: 0, admin: 1 }
+# ja.ymlファイル
+enums:
+  user:
+    role:
+      general: '一般'
+      admin: '管理者'
+
+
+☑enumでgeneralとadminを定義する順番はどちらでも良い
+
+
+☑User.roles_i18nを確認すると{"general"=>"一般", "admin"=>"管理者"}と表示される
+
+
+☑User.roles_i18n.invertを確認すると{"一般"=>"general", "管理者"=>"admin"}と表示される
+
+
+Controllerで@user.role = 0と値を設定した。
+その場合にViewファイルで<%= ＠user.role_i18n %>と書くと"general"と表示される
+
+！1の順番はどちらでも良い。invertを使うとキーとバリューが入れ替わって表示される。4は一般と表示される。
+
+→2、3が正解
+選択肢1 
+enumを設定する際、デフォルト値になり得る0には管理者権限の値を割り当てるべきではないです。
+UserのアカウントをSeedなどで作成する際に権限の指定を忘れて、気付かずに管理者権限を付与することがないようにしましょう。
+仮に悪用される可能性が少ないケースでも、強い権限の値をデフォルト値に設定することは避けるようにしましょう。
+
+
+
+問題12.
+ActiveRecordについて正しい記述はどれか
+
+
+☑バリデーション(検証)もActiveRecordの機能の一つである
+
+
+☑SQL文を直接書く代わりに、わずかなアクセスコードをオブジェクト指向スタイルで書くだけで、データベースを操作するものである。
+
+
+☑RailsのモデルはActiveRecordを継承している
+
+
+Railsにおける基本的なルールとして、モデル名は複数形(Users)、テーブル名は単数形(user)とする必要がある。
+
+
+
+！ActiveRecordは検証を自動で行ってくれる。SQLを操作できる。モデルは単数形、テーブルは複数形にする必要がある。
+
+→1、2、3が正解
+
+
+
+問題13.
+以下のうち文法的に正しいものを選べ
+
+
+☑User.create(name: "David", occupation: "Code Artist")
+
+
+
+☑user = User.new
+user.name = "David"
+user.occupation = "Code Artist"
+user.save
+
+
+
+☑user = User.new(name: "David", occupation: "Code Artist")
+user.save
+
+
+
+user = User.new(name="David", occupation="Code Artist")
+user.save
+
+
+
+！4は構文が異なる。
+
+
+→1、2、3が正解
+選択肢4 
+インスタンスの属性（attributes）を書き換える場合はこのような書き方はしません。
+User.new(name: "David")とハッシュを代入する書き方が正しいです。
+ちなみにこれはUser.new({ name: "David"} )とハッシュの波括弧（ブレース）を省略して代入した書き方となります。
+
+
+問題14.
+以下のうち構文的に正しいのはどれか
+
+users = User.where(name: "taro")
+users.name
+
+david = User.find(name: 'David')
+
+☑users = User.where(name = 'David', occupation = 'Code Artist')
+
+☑user = User.first
+
+！1と2は構文が正しくない
+
+→4が正解
+選択肢1 
+whereはActiveRecord::Relationを返すため、users.nameの時点でエラーとなります。
+users.pluck(:name)とすればエラーとなりません
+選択肢2
+findメソッドはidしか引数として受け付けず、id以外のものである場合はエラーとなります。
+選択肢3
+イコールではなく、シンボルで書かないとエラーになります。
+なお、User.where(name: 'David').where(occupation: 'Code Artist')と書くこともできます。
+
+ActiveRecordについて、Railsガイドに解説が書いてあります。
+
+Active Record クエリインターフェイス
+また、各メソッドについて調べる場合、Railsドキュメントを活用すると良いでしょう。
+
+where | Railsドキュメント
+first | Railsドキュメント
+find | Railsドキュメント
+各メソッドの概要については、以下の通りです。
+
+whereメソッド
+条件を指定し、当てはまるレコードを全て取得するメソッド
+条件については文字列で指定したり、ハッシュで指定することができる
+その他、配列で指定することができるので、ドキュメントで確認してみるとよい
+firstメソッド
+モデルの先頭のレコードを取得するメソッド
+先頭のレコードを３つ取得することや、並び替えてから先頭のレコードを取得することもできる
+findメソッド
+IDを指定してレコードを取得
+複数指定したり、配列で指定して取得することもできる(e.g User.find(1, 2, 3) User.find([1, 2, 3]))
+
+
+
+問題15.
+名前を更新する処理として正しいものはどれか
+
+
+
+user = User.find_by(name: 'David')
+user.name = 'Dave'
+user.save
+
+
+☑User.find_by(name: 'David').update(name: 'Dave')
+
+
+user = User.find(name: 'David')
+user.name = 'Dave'
+user.save
+
+
+☑user = User.find_by(name: 'David')
+user.update(name: 'Dave')
+
+
+！saveではなくupdateが適切
+
+→1、2、4が正解
+選択肢1
+id以外の属性を条件として検索したい場合はfind_byメソッドを使用します
+選択肢2
+メソッドチェインを使用して、ユーザーの取得と更新処理を1行で記載しています。
+User.find_by(name: 'David')でユーザーが取得できなかった場合、nilに対してupdate処理を行うこととなり、例外が発生する
+例外が発生しないようにするには、以下のように&.(通称ぼっち演算子)を使用すると良い
+nilでないときに限り、update処理を行うようになります。
+User.find_by(name: 'David')&.update(name: 'Dave')
+選択肢3
+findメソッドはidしか引数として受け付けず、id以外のものである場合は例外処理となります。
+
+
+問題16.
+
+以下のようなモデルがある時の挙動として正しいものはどれか
+
+class Person < ApplicationRecord
+  validates :name, presence: true
+end
+
+
+☑p = Person.new
+p.save
+# => false
+
+
+☑p = Person.new
+p.save!
+# => false
+
+
+☑Person.create(name: 'John Doe')
+=> #<Person:0x00007f7f8a4a3cb8 id: ~~~のようにPersonのインスタンスが返る
+
+
+☑p = Person.new
+# => #<Person id: nil, name: nil>
+p.errors.messages
+# => {name:["空欄にはできません"]}
+
+
+！すべて正しい
+→1、3が正解
+選択肢2
+save!メソッドはバリデーションにかかったときに、例外を返します。
+選択肢4
+errorsにエラー情報が入るのはvalid?メソッドが実行された時になります。
+saveやcreateメソッドの中でも呼ばれているので、保存に失敗した場合にerrorsにエラー情報が入ります。
+設問の場合、valid?メソッドが呼び出されるタイミングはないので、errorsにエラー情報は入りません。
+
+
+問題17.
+以下のような関連がある時、正しい説明はどれか
+
+class Author < ApplicationRecord
+  has_many :books
+end
+
+class Book < ApplicationRecord
+  belongs_to :author
+end
+
+
+
+☑Authorテーブルの最初のレコード（orderはここでは問わない）のname属性の値をtestに変えたい場合の記述は以下の通りである。
+
+author = Author.first
+author.name = "test"
+author.save
+
+
+
+☑Authorテーブルの最初のレコード（orderはここでは問わない）のname属性の値をtestに変えたい場合の記述は以下の通りである。
+
+Author.first.update(name: "test")
+
+
+
+☑Authorテーブルの最初のレコード（orderはここでは問わない）に紐づいているBookからtitleがhogeのものを取得し、それを削除する場合の記述は以下の通りである。
+
+author = Author.first
+books = author.books.where(title: "hoge")
+books.destroy
+
+
+
+Authorテーブルの最初のレコード（orderはここでは問わない）に紐づいているBookからtitleがhogeのものを取得し、それを削除する場合の記述は以下の通りである。
+
+book = Book.find_by(title: "hoge", author_id: Author.first.id)
+book.destroy
+
+
+！4はidの呼び出し方が正しくない
+
+→1、2、4が正解
+選択肢3
+whereで取得できるものはActiveRecord::Relationであり、複数の要素が入っている配列のようなものです。
+複数のものに対してdestroyは呼べなさそう、と直感的に思えると良いでしょう。
+
+配列形式のオブジェクトに削除処理を実行しても、何番目の要素を削除すれば良いかが分からないですよね。
+[hoge, foo].destroy --> 何を削除する？
+
+配列形式で取得したオブジェクトを全件削除する場合は、destroy_allを使う書き方が正しいです。
+
+author = Author.first
+books = author.books.where(title: "hoge")
+books.destroy_all
+books.firstのように単体のインスタンスを取ってきて、それに対してdestroyをすることは可能です。
+
+author = Author.first
+books = author.books.where(title: "hoge")
+books.first.destroy
+
+選択肢4
+関連付けを使用すると、以下のように書くことができます。
+
+author = Author.first
+book = author.books.find_by(title: "hoge")
+book.destroy
+
+
+問題18.
+
+以下のフォームを送信した時のパラメータについての説明で正しいものはどれか
+
+<form accept-charset="UTF-8" action="/clients" method="post">
+  <input type="text" name="client[name]" value="Acme" />
+  <input type="text" name="client[phone]" value="12345" />
+  <input type="text" name="client[address][postcode]" value="12345" />
+  <input type="text" name="client[address][city]" value="Carrot City" />
+</form>
+
+
+
+☑params[:client]の値は{ "name" => "Acme", "phone" => "12345", "address" => { "postcode" => "12345", "city" => "Carrot City" } }である。
+
+
+☑params[:name]の値はAcmeである
+
+
+☑params[:address]の値は{ "postcode" => "12345", "city" => "Carrot City" }である
+
+
+☑params[:address][:postcode]の値は12345である
+
+
+！すべて正しい
+
+→1が正解
+選択肢2、3、4
+それぞれ、[:client]が抜けています
+選択肢2つ目： params[:client][:name]選択肢3つ目： params[:client][:address]選択肢4つ目： params[:client][:address][:postcode]
+
+
+問題19.
+
+以下のフォームを送信した時のパラメータの説明として正しいものはどれか
+
+<form accept-charset="UTF-8" action="/users" method="post">
+  <input type="email" name="email" value="abc@example.com" />
+  <input type="text" name="name" value="alice" />
+  <input type="text" name="age" value="20" />
+</form>
+
+params[:user]の値は{ "email" => "abc@example.com", "name" => "alice", "age" => 20 }である
+
+
+params[:user][:email]の値はabc@example.comである
+
+
+☑params[:age]の値は20である
+
+
+params[:user][:age].valueの値は20である
+
+
+！正しくハッシュ化されないから3以外誤り
+→3が正解
+
+
+問題20.
+以下の①、②、③に入る言葉の組み合わせとして正しいものはどれか
+
+class PeopleController < ActionController::Base
+  # 以下のコードはActiveModel::ForbiddenAttributesError例外を発生します
+  # 明示的な許可を行なわずに、パラメータを一括で渡してしまう
+  # 危険な「①」が行われているからです。
+  def create
+    Person.create(params[:person])
+  end
+
+  # 以下のコードは、パラメータにpersonキーがあれば成功します。
+  # personキーがない場合は
+  # ActionController::ParameterMissing例外を発生します。
+  # この例外はActionController::Baseにキャッチされ、
+  # 400 Bad Requestを返します。
+  def update
+    person = current_account.people.find(params[:id])
+    person.update!(person_params)
+    redirect_to person
+  end
+
+  private
+    # 許可するパラメータはprivateメソッドでカプセル化します。
+    # これは非常によい手法であり、createとupdateの両方で使いまわすことで
+    # 同じ許可を与えることができます。また、許可する属性をユーザーごとにチェックするよう
+    # このメソッドを特殊化することもできます。
+    def person_params
+      params.require(②).③(:name, :age)
+    end
+end
+
+
+
+
+☑①ストロングパラメータ
+
+②:person
+
+③permit
+
+
+①ストロングパラメータ
+
+②person
+
+③require
+
+
+①マスアサインメント
+
+②:person
+
+③permit
+
+
+①マスアサインメント
+
+②person
+
+③allow
+
+→3が正解
+
+
+問題21.
+
+以下の①、②、③に入るものとしてもっとも適切な組み合わせはどれか
+
+class ApplicationController < ActionController::Base
+
+  private
+
+  # キー付きのセッションに保存されたidでユーザーを検索する
+  # :current_user_id はRailsアプリケーションでユーザーログインを扱う際の定番の方法。
+  # ログインするとセッション値が設定され、
+  # ログアウトするとセッション値が削除される。
+  def current_user
+    @_current_user ||= session[:current_user_id] && ①
+  end
+end
+class LoginsController < ApplicationController
+  # "Create" a login, aka "log the user in"
+  def create
+    if user = User.authenticate(params[:username], params[:password])
+      # セッションにuser_idを保存し、
+      # 今後のリクエストで使えるようにする
+      ②
+      redirect_to root_url
+    end
+  end
+end
+class LoginsController < ApplicationController
+  # ログインを削除する (=ログアウト)
+  def destroy
+    # セッションidからuser idを削除する
+    ③
+    # メモ化された現在のユーザーをクリアする
+    @_current_user = nil
+    redirect_to root_url
+  end
+end
+
+
+
+①User.find(session[:current_user_id])
+
+②session.current_user_id = user.id
+
+③session.delete(:current_user_id)
+
+
+①session[:current_user_id]
+
+②session[:current_user_id] = user.id
+
+③session.delete(:current_user_id)
+
+
+①User.find_by(id: session.current_user_id)
+
+②session[:current_user_id] = user.id
+
+③session[:current_user_id].delete
+
+
+☑①User.find_by(id: session[:current_user_id])
+
+②session[:current_user_id] = user.id
+
+③session.delete(:current_user_id)
+
+
+→4が正解
+選択肢1
+②のsession.current_user_id = user.idという書き方が誤りです。
+session[:current_user_id] = user.idとハッシュ形式でキーとバリューを指定する必要があります。
+選択肢2
+①にはUserオブジェクトが入るのが正しいですが、セッションの値を入れているので誤りです。
+current_userというメソッドの返り値として、セッションの値が返ってくるのはおかしいですよね。
+ここではUserのオブジェクトを返すような内容であるべきです。
+選択肢3
+session[:current_user_id].deleteという書き方はありません。
+正しくはsession.clearもしくはsession.delete(key)なので注意しましょう。
+
+①について
+||=は、||演算子の自己代入演算子です。
+
+そのため、以下の2つの書き方は同等の意味を持ちます。
+
+@_current_user ||= session[:current_user_id] && ①
+@_current_user = @_current_user || session[:current_user_id] && ①
+次にsession[:current_user_id] && ①の部分について
+session[:current_user_id]には現在のユーザーIDが入っていて、これを利用し@_current_user変数にユーザーオブジェクトを格納すれば良さそうですね。
+そのため、User.find(session[:current_user_id])もしくはUser.find_by(id: session[:current_user_id])が正しいです。
+ここではsession[:current_user_id] &&を記載することで、find(find_by)メソッドの引数にnull値を入れて実行しない様にしています。
+②について
+セッションはハッシュのため、session.current_user_idではなく、session[:current_user_id]の書き方で取得・格納できます。
+③について
+下記リファレンスにあるよう、session.delete(:current_user_id)の書き方でセッションを削除できます。
+（https://railsguides.jp/action_controller_overview.html#%E3%82%BB%E3%83%83%E3%82%B7%E3%83%A7%E3%83%B3%E3%81%AB%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E3%81%99%E3%82%8B）
+
+
+問題22.
+
+
+以下の定義により生成されるルーティングとして正しいものはどれか
+
+resources :users
+
+HTTP動詞パス	コントローラ#アクション	目的
+A	B	C	すべてのユーザーの一覧を表示
+D	E	F	ユーザーを1つ作成するためのHTMLフォームを返す
+G	H	I	ユーザーを1つ作成する
+J	K	L	特定のユーザーを表示する
+M	N	O	ユーザー編集用のHTMLフォームを返す
+P	Q	R	特定のユーザーを更新する
+S	T	U	特定のユーザーを削除する
+
+
+
+A・・・GET
+
+B・・・/users/index
+
+C・・・users#index
+
+
+☑D・・・GET
+
+E・・・/users/new
+
+F・・・users#new
+
+
+☑G・・・POST
+
+H・・・/users/create
+
+I・・・users#create
+
+
+☑J・・・GET
+
+K・・・/users/:id
+
+L・・・users#show
+
+！1以外は正しい。1はBが/usersになる
+
+→2、4が正解
+選択肢2
+正しいです。newとeditのみ、パスにアクション名が含まれます。
+選択肢3
+Hの/users/createが誤りです。
+createアクションのパスはPOSTの/usersです。
+パスはindexアクションと同じなことに注意です。
+選択肢4
+正しいです。showアクションの場合、どのリソースが対象なのかという情報も必要のため、パスに/:idが含まれます。
+
+
+問題23.
+以下の定義により生成されるルーティングとして正しいものはどれか
+
+resources :users
+
+HTTP動詞パス	コントローラ#アクション	目的
+A	B	C	すべてのユーザーの一覧を表示
+D	E	F	ユーザーを1つ作成するためのHTMLフォームを返す
+G	H	I	ユーザーを1つ作成する
+J	K	L	特定のユーザーを表示する
+M	N	O	ユーザー編集用のHTMLフォームを返す
+P	Q	R	特定のユーザーを更新する
+S	T	U	特定のユーザーを削除する
+
+
+☑S・・・DELETE
+
+T・・・/users/:id
+
+U・・・users#destroy
+
+
+☑M・・・GET
+
+N・・・/users/:id/edit
+
+O・・・users#edit
+
+
+☑P・・・PATCH/PUT
+
+Q・・・/users/update
+
+R・・・users#update
+
+
+☑A・・・GET
+
+B・・・/users
+
+C・・・users#index
+
+
+！いずれも正しい
+
+→1、2、4が正解
+（https://railsguides.jp/routing.html#crud%E3%80%81%E5%8B%95%E8%A9%9E%E3%80%81%E3%82%A2%E3%82%AF%E3%82%B7%E3%83%A7%E3%83%B3）
+
+選択肢1
+正しいです。destroyアクションの場合、削除対象となるリソースの特定にIDが必要となるため、パスに/:idが含まれます。
+選択肢2
+正しいです。newとeditのみ、パスにアクション名が含まれます。
+選択肢3
+質問文の/users/updateが誤りです。どのリソースが対象なのかという情報(/:id)がパスにないという観点からも誤りとわかります。
