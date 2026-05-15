@@ -232,3 +232,13 @@ RSpec入門
 ・system specとは何か
 ・capybaraの使い方
 ・処理の共通化
+
+rails応用
+8.埋め込みメディアタイプにTwitterの追加
+外部コンテンツの埋め込み（embed）
+YouTubeのURL解析
+Twitter埋め込み
+
+9.トップ画像をスライダー形式に変更
+Swiper（スライダーライブラリ）の導入と設定
+画像の複数アップロードと個別削除
