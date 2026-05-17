@@ -1,0 +1,173 @@
+1.クライアント 『IDが2の店舗に所属するスタッフって誰だっけ？』
+
+Staff.where(store_id: 2)
+
++----------+------------+-----------+------------+---------+------------------------------+----------+--------+----------+----------+-------------------------+
+| staff_id | first_name | last_name | address_id | picture | email                        | store_id | active | username | password | last_update             |
++----------+------------+-----------+------------+---------+------------------------------+----------+--------+----------+----------+-------------------------+
+| 2        | Jon        | Stephens  | 4          |         | Jon.Stephens@sakilastaff.com | 2        | true   | Jon      |          | 2006-02-15 03:57:16 UTC |
++----------+------------+-----------+------------+---------+------------------------------+----------+--------+----------+----------+-------------------------+
+1 row in set
+
+
+2.クライアント 『映画「BLANKET BEVERLY」のDVD、いくつ在庫あるっけ？』
+
+Inventory.joins(:film).where(film: { title: "BLANKET BEVERLY" }).size
+
+=> 4
+
+3.クライアント 『2005年に貸し出ししてるけどまだ返却されてない映画があるらしい。その映画の一覧を出して！』
+
+Film.select(:film_id, :title).joins(inventories: :rentals).where(rental: { rental_date: Time.new(2005).beginning_of_year..Time.new(2005).end_of_year, return_date: nil })
+
++---------+------------------+
+| film_id | title            |
++---------+------------------+
+| 1       | ACADEMY DINOSAUR |
++---------+------------------+
+1 row in set
+
+4.クライアント 『どんなカテゴリが売れてるんだろ？カテゴリごとに売上を集計して上位5つ教えてください！』
+
+Category.select("category.category_id, category.name, sum(payment.amount) as revenue").joins(films: { inventories: { rentals: :payments } }).group("category.category_id, category.name").limit(5).order(revenue: :desc)
+
++-------------+-----------+---------+
+| category_id | name      | revenue |
++-------------+-----------+---------+
+| 15          | Sports    | 5314.21 |
+| 14          | Sci-Fi    | 4756.98 |
+| 2           | Animation | 4656.3  |
+| 7           | Drama     | 4587.39 |
+| 5           | Comedy    | 4383.58 |
++-------------+-----------+---------+
+5 rows in set
+
+5.クライアント 『どんなカテゴリの映画が多いんだろ？カテゴリ別に映画の本数を集計して、60本以上あるものを全部出して欲しい！』
+
+Category.select("category.category_id, name, count(*) as number_of_film").joins(:film_categories).group(:category_id, :name).having("number_of_film >= 60").order("number_of_film desc")
+
++-------------+-------------+----------------+
+| category_id | name        | number_of_film |
++-------------+-------------+----------------+
+| 15          | Sports      | 74             |
+| 9           | Foreign     | 73             |
+| 8           | Family      | 69             |
+| 6           | Documentary | 68             |
+| 2           | Animation   | 66             |
+| 1           | Action      | 64             |
+| 13          | New         | 63             |
+| 7           | Drama       | 62             |
+| 10          | Games       | 61             |
+| 14          | Sci-Fi      | 61             |
+| 3           | Children    | 60             |
++-------------+-------------+----------------+
+11 rows in set
+
+6.クライアント 『JOE SWANKが出演してる映画全部見たいから教えて！』
+
+Film.joins(:actors).where(actor: { first_name: "JOE", last_name: "SWANK" }).select(:film_id, :title)
+
++---------+------------------------+
+| film_id | title                  |
++---------+------------------------+
+| 30      | ANYTHING SAVANNAH      |
+| 74      | BIRCH ANTITRUST        |
+| 147     | CHOCOLAT HARRY         |
+| 148     | CHOCOLATE DUCK         |
+| 191     | CROOKED FROGMEN        |
+| 200     | CURTAIN VIDEOTAPE      |
+| 204     | DALMATIONS SWEDEN      |
+| 434     | HORROR REIGN           |
+| 510     | LAWLESS VISION         |
+| 514     | LEBOWSKI SOLDIERS      |
+| 552     | MAJESTIC FLOATS        |
+| 650     | PACIFIC AMISTAD        |
+| 671     | PERDITION FARGO        |
+| 697     | PRIMARY GLASS          |
+| 722     | REEF SALUTE            |
+| 752     | RUNNER MADIGAN         |
+| 811     | SMILE EARRING          |
+| 815     | SNATCHERS MONTEZUMA    |
+| 865     | SUNRISE LEAGUE         |
+| 873     | SWEETHEARTS SUSPECTS   |
+| 889     | TIES HUNGER            |
+| 903     | TRAFFIC HOBBIT         |
+| 926     | UNTOUCHABLES SUNRISE   |
+| 964     | WATERFRONT DELIVERANCE |
+| 974     | WILD APOLLO            |
++---------+------------------------+
+25 rows in set
+
+7.クライアント 『短い映画は見応えがないな...JOE SWANKが出演している映画の中でも100分以上放映時間があるものだけ見せて！』
+
+Film.joins(:actors).where("length >= 100").where(actor: { first_name: "JOE", last_name: "SWANK" }).select(:film_id, :title, :length)
+
++---------+----------------------+--------+
+| film_id | title                | length |
++---------+----------------------+--------+
+| 74      | BIRCH ANTITRUST      | 162    |
+| 147     | CHOCOLAT HARRY       | 101    |
+| 148     | CHOCOLATE DUCK       | 132    |
+| 191     | CROOKED FROGMEN      | 143    |
+| 200     | CURTAIN VIDEOTAPE    | 133    |
+| 204     | DALMATIONS SWEDEN    | 106    |
+| 434     | HORROR REIGN         | 139    |
+| 510     | LAWLESS VISION       | 181    |
+| 552     | MAJESTIC FLOATS      | 130    |
+| 650     | PACIFIC AMISTAD      | 144    |
+| 722     | REEF SALUTE          | 123    |
+| 752     | RUNNER MADIGAN       | 101    |
+| 865     | SUNRISE LEAGUE       | 135    |
+| 873     | SWEETHEARTS SUSPECTS | 108    |
+| 889     | TIES HUNGER          | 111    |
+| 903     | TRAFFIC HOBBIT       | 139    |
+| 926     | UNTOUCHABLES SUNRISE | 120    |
+| 974     | WILD APOLLO          | 181    |
++---------+----------------------+--------+
+18 rows in set
+
+
+8.クライアント 『Action系の映画が見たい！JOE SWANKが出演してる映画でActionカテゴリに分類されるものを取ってきて！』
+
+Film.joins(:actors, :categories).where(actor: { first_name: "JOE", last_name: "SWANK" }).where(category: { name: "Action" }).select(:film_id, :title)
+
++---------+------------------------+
+| film_id | title                  |
++---------+------------------------+
+| 697     | PRIMARY GLASS          |
+| 964     | WATERFRONT DELIVERANCE |
++---------+------------------------+
+2 rows in set
+
+クライアント 『JOE SWANKが出演している映画の中で特に人気なのはどれだろ？売れてるランキングトップ10を見せて！』
+
+Film.select("film.film_id, film.title, sum(payment.amount) as revenue").joins(:actors, inventories: { rentals: :payments }).where(actor: { first_name: "JOE", last_name: "SWANK" }).limit(10).group(:film_id).order(revenue: :desc)
+
++---------+------------------------+---------+
+| film_id | title                  | revenue |
++---------+------------------------+---------+
+| 865     | SUNRISE LEAGUE         | 170.76  |
+| 964     | WATERFRONT DELIVERANCE | 121.83  |
+| 873     | SWEETHEARTS SUSPECTS   | 98.71   |
+| 434     | HORROR REIGN           | 87.73   |
+| 510     | LAWLESS VISION         | 86.84   |
+| 889     | TIES HUNGER            | 80.89   |
+| 74      | BIRCH ANTITRUST        | 74.89   |
+| 514     | LEBOWSKI SOLDIERS      | 72.79   |
+| 650     | PACIFIC AMISTAD        | 62.76   |
+| 811     | SMILE EARRING          | 58.9    |
++---------+------------------------+---------+
+10 rows in set
+
+10.クライアント 『SUNRISE LEAGUEっていう映画がおもろいらしい。どれくらい売上あるんだろ？』
+
+irb(main):019:0> Film.select("film.film_id, film.title, sum(payment.amount) as revenue").joins(inventories: { rentals: :payments }).where(film: { title: 'SUNRISE LEAGUE' }).group(:film_id)  
+
++---------+----------------+---------+
+| film_id | title          | revenue |
++---------+----------------+---------+
+| 865     | SUNRISE LEAGUE | 170.76  |
++---------+----------------+---------+
+1 row in set
+
+
